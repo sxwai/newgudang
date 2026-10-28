@@ -1,1 +1,44 @@
+name: Deploy to PythonAnywhere
 
+on:
+  push:
+    branches: [ main ]  # Atau 'master', sesuaikan dengan branch utama Anda
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install PythonAnywhere API client
+        run: pip install pythonanywhere
+
+      - name: Push files and reload Web App
+        env:
+          PA_USER: ${{ secrets.PYTHONANYWHERE_USER }}
+          PA_TOKEN: ${{ secrets.PYTHONANYWHERE_TOKEN }}
+          PA_DOMAIN: ${{ secrets.PYTHONANYWHERE_DOMAIN }}
+        run: |
+          # Mengirim file ke PythonAnywhere menggunakan API
+          pa_autoconfigure.py --domain $PA_DOMAIN --user $PA_USER --token $PA_TOKEN || true
+          
+          # Script alternatif untuk update file via API PythonAnywhere
+          python -c "
+          import pythonanywhere.api
+          import os
+          
+          user = os.environ['PA_USER']
+          token = os.environ['PA_TOKEN']
+          domain = os.environ['PA_DOMAIN']
+          
+          # Reload web app agar perubahan aktif
+          pa = pythonanywhere.api.PythonAnywhere(user, token)
+          pa.reload_web_app(domain)
+          print('Web app successfully reloaded!')
+          "
